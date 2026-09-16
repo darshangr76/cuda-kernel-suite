@@ -1,0 +1,7 @@
+kernel,N,block_size,time_ms,bandwidth_gbps
+reduction_naive,16777216,256,1.2242,54.82
+reduction_naive,16777216,256,1.2694,52.87
+reduction_warp,16777216,256,0.2858,234.84
+reduction_warp,16777216,256,0.2905,231.02
+reduction_shared,16777216,256,0.2599,258.22
+reduction_shared,16777216,256,0.2575,260.65

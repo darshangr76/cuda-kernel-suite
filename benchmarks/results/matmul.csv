@@ -1,0 +1,5 @@
+kernel,M,N,K,time_ms,GFLOPS
+matmul_naive,1024,1024,1024,8.5417,251.41
+matmul_naive,1024,1024,1024,3.9998,536.90
+matmul_tiled_32,1024,1024,1024,3.1068,691.21
+matmul_tiled_32,1024,1024,1024,3.1051,691.60

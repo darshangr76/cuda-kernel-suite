@@ -1,0 +1,7 @@
+kernel,N,block_size,time_ms,bandwidth_gbps
+vector_add,16777216,32,1.1550,174.31
+vector_add,16777216,64,0.7708,261.20
+vector_add,16777216,128,0.7787,258.54
+vector_add,16777216,256,0.7766,259.25
+vector_add,16777216,512,0.7767,259.20
+vector_add,16777216,1024,0.7793,258.33

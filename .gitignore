@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+._*
+
+# Compiled binaries (rebuild from .cu source)
+vector_add
+vector_add_sweep
+reduction_naive
+reduction_warp
+reduction_shared
+matmul_naive
+matmul_tiled
+
+# Editor junk
+*.swp
+*~
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Zips (these are backups, not source)
+*.zip

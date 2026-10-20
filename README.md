@@ -1,56 +1,35 @@
-# cuda-kernel-suite
+# 🛡️ AI Model Regression & Load Testing Pipeline
 
-A CUDA kernel optimization suite — six kernels across three families
-(vector add, reduction, matmul), each profiled with Nsight Compute to
-identify its bottleneck and measured for speedup.
+An automated CI/CD testing framework designed to ensure AI models are not only accurate but also reliable, fast, and memory-efficient before they reach production.
 
-Target: Tesla T4 (sm_75) | CUDA 12.8 | Nsight Compute 2025.1.1
-Environment: Google Colab (GPU runtime)
+## 📖 Overview
+Deploying an AI model is easy; ensuring it doesn't break under load is hard. This project provides an end-to-end testing pipeline for PyTorch/FastAPI AI applications. It automatically runs on every GitHub push to validate model accuracy, enforce strict latency SLAs (Service Level Agreements), and simulate high-concurrency traffic to find API bottlenecks.
 
-## Results at a glance
+## ✨ Key Features
+*   **Accuracy Regression Testing:** Automatically verifies the model maintains >85% accuracy on a held-out test set, preventing silent model degradation.
+*   **Latency SLA Enforcement:** Fails the CI/CD build if single-image inference exceeds **50ms**.
+*   **Edge-Case & Shape Validation:** Tests the model against malformed inputs (e.g., NaN values, wrong tensor shapes) to ensure the API fails gracefully without crashing the server.
+*   **High-Concurrency Load Testing:** Uses `Locust` to simulate 100+ concurrent users hitting the FastAPI endpoint, measuring P99 latency and throughput.
+*   **Automated GitHub Actions:** Runs the entire suite on every `git push`.
 
-| Kernel | Time | Best metric | Bottleneck |
-|--------|------|-------------|------------|
-| vector_add | 0.77 ms | 262 GB/s, 90% DRAM | DRAM |
-| reduction_naive | 1.22 ms | 54 GB/s, 86% L1 | L1/shared mem |
-| reduction_shared | 0.26 ms | 260 GB/s, 96% DRAM | DRAM (saturated) |
-| reduction_warp | 0.29 ms | 235 GB/s, 87% DRAM | DRAM |
-| matmul_naive | 8.54 ms | 251 GFLOPS, 94% L1 | L1/TEX |
-| matmul_tiled_32 | 3.11 ms | 691 GFLOPS, 88% L1 | L1/TEX (improved) |
+## 🛠️ Tech Stack
+*   **Machine Learning:** PyTorch, Torchvision, TensorRT
+*   **Backend API:** FastAPI, Uvicorn
+*   **Testing Framework:** `pytest`, `httpx` (for API testing)
+*   **Load Testing:** `Locust`
+*   **CI/CD:** GitHub Actions
 
-## Speedups achieved
+## 📊 Test Metrics (Results)
+*(Note: Update these with your actual test results once you run the pipeline)*
+*   **Model Baseline Accuracy:** 87.3%
+*   **Single-Image Inference (CPU):** 42ms
+*   **Single-Image Inference (TensorRT/GPU):** 8ms
+*   **P99 Latency (100 Concurrent Users):** 120ms
+*   **API Error Rate under load:** 0.0%
 
-- Reduction: **4.75x** (naive 1.22 ms -> shared 0.26 ms)
-- Matmul: **2.75x** (naive 8.54 ms -> tiled 3.11 ms)
+## 🚀 How to Run Locally
 
-## Kernels
-
-1. **vector_add** — memory-bound baseline
-2. **reduction** — naive tree, shared-memory grid-stride, warp shuffle
-3. **matmul** — naive (one thread per output), tiled (shared-memory 32x32)
-
-## Key findings
-
-- Vector add is DRAM-bound at 90% — the canonical memory-bound kernel.
-- Naive reduction is L1-bound at 86% due to shared-memory tree
-  reduction across 65,536 blocks; the fix is grid-stride + fewer blocks.
-- Tiled matmul halved global memory traffic but stayed L1/TEX bound at
-  88% because shared-memory loads share the same port as global loads.
-  Register blocking would be the next step.
-- Three bottleneck types appeared across the project: DRAM-bound,
-  L1/shared-memory-bound, and L1/TEX-bound. Every kernel was diagnosed
-  by Nsight Compute, not guessed.
-
-## Repository layout
-
-- src/               kernel sources + per-kernel READMEs
-- benchmarks/        CSV outputs from runs
-- profiles/          Nsight Compute .ncu-rep reports
-- plots/             speedup/bandwidth charts
-- docs/              methodology and findings
-
-## How to reproduce
-
-See src/*/README.md for per-kernel details.
-Compile: nvcc -O3 -arch=sm_75 -lineinfo -o kernel kernel.cu
-Profile: ncu --set full -c 1 -o profile ./kernel
+### 1. Clone the repository
+```bash
+git clone https://github.com/darshangr76/ai-testing-pipeline.git
+cd ai-testing-pipeline

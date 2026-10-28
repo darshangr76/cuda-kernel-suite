@@ -3,20 +3,6 @@
 #include <cmath>
 #include <cuda_runtime.h>
 
-// ---------------------------------------------------------------------------
-// Naive matmul: one thread per output element.
-//
-// C[M][N] = A[M][K] * B[K][N]
-//
-// Deliberately unoptimized:
-//   - Each thread reads its A row and B column from DRAM
-//   - No shared memory, no data reuse
-//   - O(N^3) DRAM reads for an N*N matmul
-//
-// This is the baseline that motivates tiling.
-// ---------------------------------------------------------------------------
-
-#define TILE 16   // unused in naive; placeholder for later
 
 __global__ void matmulNaive(const float* __restrict__ A,
                             const float* __restrict__ B,
@@ -34,7 +20,7 @@ __global__ void matmulNaive(const float* __restrict__ A,
     }
 }
 
-// --- Host-side CPU reference for correctness -------------------------------
+
 void matmulCPU(const float* A, const float* B, float* C,
                int M, int N, int K) {
     for (int i = 0; i < M; ++i) {
@@ -55,7 +41,7 @@ int main(int argc, char** argv) {
 
     printf("Matmul: M=%d N=%d K=%d\n", M, N, K);
 
-    // Host buffers
+    
     size_t bytesA = (size_t)M * K * sizeof(float);
     size_t bytesB = (size_t)K * N * sizeof(float);
     size_t bytesC = (size_t)M * N * sizeof(float);
@@ -68,7 +54,7 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < (size_t)M * K; ++i) h_A[i] = 1.0f;
     for (size_t i = 0; i < (size_t)K * N; ++i) h_B[i] = 1.0f;
 
-    // Device buffers
+    
     float *d_A, *d_B, *d_C;
     cudaMalloc(&d_A, bytesA);
     cudaMalloc(&d_B, bytesB);
@@ -76,17 +62,17 @@ int main(int argc, char** argv) {
     cudaMemcpy(d_A, h_A, bytesA, cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, h_B, bytesB, cudaMemcpyHostToDevice);
 
-    // Launch config
+    
     dim3 block(16, 16);
     dim3 grid((N + block.x - 1) / block.x, (M + block.y - 1) / block.y);
 
-    // Warmup
+   
     for (int i = 0; i < 3; ++i) {
         matmulNaive<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
     }
     cudaDeviceSynchronize();
 
-    // Timed
+
     cudaEvent_t s, e;
     cudaEventCreate(&s); cudaEventCreate(&e);
     cudaEventRecord(s);
@@ -103,10 +89,10 @@ int main(int argc, char** argv) {
 
     cudaMemcpy(h_C, d_C, bytesC, cudaMemcpyDeviceToHost);
 
-    // CPU reference
+    
     matmulCPU(h_A, h_B, h_Cref, M, N, K);
 
-    // Compare (sample)
+   
     bool ok = true;
     float max_err = 0.0f;
     for (size_t i = 0; i < (size_t)M * N; ++i) {
@@ -115,14 +101,14 @@ int main(int argc, char** argv) {
         if (err > 1e-2f) { ok = false; break; }
     }
 
-    // Compute GFLOPS: 2 * M * N * K per matmul
+    
     double flops = 2.0 * (double)M * (double)N * (double)K;
     double gflops = flops / (ms * 1e-3) / 1e9;
 
     printf("time=%.4f ms  GFLOPS=%.2f  max_err=%.6f  %s\n",
            ms, gflops, max_err, ok ? "PASS" : "FAIL");
 
-    // CSV row
+  
     FILE* f = fopen("benchmarks/results/matmul.csv", "a");
     if (f) {
         fseek(f, 0, SEEK_END);

@@ -3,16 +3,7 @@
 #include <cmath>
 #include <cuda_runtime.h>
 
-// ---------------------------------------------------------------------------
-// Tiled matmul: block loads a TILE x TILE chunk of A and B into shared
-// memory, then each thread computes one output cell reusing those values.
-//
-// C[M][N] = A[M][K] * B[K][N]
-//
-// Fixes the naive bottleneck: global loads drop from O(N^3) to O(N^2)
-// ---------------------------------------------------------------------------
 
-#define TILE 32   // 32x32 tile = 4 KB per tile (fits 48 KB smem easily)
 
 __global__ void matmulTiled(const float* __restrict__ A,
                             const float* __restrict__ B,
@@ -26,17 +17,17 @@ __global__ void matmulTiled(const float* __restrict__ A,
 
     float sum = 0.0f;
 
-    // Loop over tiles along K dimension
+  
     for (int t = 0; t < (K + TILE - 1) / TILE; ++t) {
         int tiledK = t * TILE;
 
-        // Cooperative load of A[row][tiledK + threadIdx.x] into As
+      
         if (row < M && tiledK + threadIdx.x < K)
             As[threadIdx.y][threadIdx.x] = A[row * K + tiledK + threadIdx.x];
         else
             As[threadIdx.y][threadIdx.x] = 0.0f;
 
-        // Cooperative load of B[tiledK + threadIdx.y][col] into Bs
+    
         if (tiledK + threadIdx.y < K && col < N)
             Bs[threadIdx.y][threadIdx.x] = B[(tiledK + threadIdx.y) * N + col];
         else
@@ -44,7 +35,7 @@ __global__ void matmulTiled(const float* __restrict__ A,
 
         __syncthreads();
 
-        // Compute partial dot product for this tile
+     
         for (int k = 0; k < TILE; ++k) {
             sum += As[threadIdx.y][k] * Bs[k][threadIdx.x];
         }
@@ -57,7 +48,6 @@ __global__ void matmulTiled(const float* __restrict__ A,
     }
 }
 
-// --- Host CPU reference ----------------------------------------------------
 void matmulCPU(const float* A, const float* B, float* C,
                int M, int N, int K) {
     for (int i = 0; i < M; ++i)
